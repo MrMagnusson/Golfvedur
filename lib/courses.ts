@@ -1,6 +1,10 @@
 import { Course } from './types';
 
 // Source: golfvedur.is (belgingur.is API) — 60 courses, coordinates verified
+// Logos: rastimar.golf.is (Supabase CDN)
+const LOGO = (file: string) =>
+  `https://ivswzdjgcsociqyoomki.supabase.co/storage/v1/object/public/clubs//${file}`;
+
 export const COURSES: Course[] = [
 
   // ── Capital Region ───────────────────────────────────────────────────
@@ -14,6 +18,7 @@ export const COURSES: Course[] = [
     lon: -21.8771,
     description: 'Golfklúbbur Brautarholts. One of Iceland\'s most storied clubs in the heart of the capital.',
     holes: 18,
+    logoUrl: LOGO('gbr.png'),
   },
   {
     id: 'grafarholt',
@@ -25,6 +30,7 @@ export const COURSES: Course[] = [
     lon: -21.76865,
     description: 'Golfklúbbur Reykjavíkur. Iceland\'s oldest and largest golf club, founded 1934.',
     holes: 18,
+    logoUrl: LOGO('gr.svg'),
   },
   {
     id: 'hlidavollur',
@@ -36,6 +42,7 @@ export const COURSES: Course[] = [
     lon: -21.72719,
     description: 'Golfklúbbur Mosfellsbæjar. Sheltered valley course just outside the capital.',
     holes: 18,
+    logoUrl: LOGO('gmos.png'),
   },
   {
     id: 'hvaleyrarvollur',
@@ -47,6 +54,7 @@ export const COURSES: Course[] = [
     lon: -21.991956,
     description: 'Golfklúbburinn Keilir. Top-ranked Icelandic course on the dramatic Hvalseyrí peninsula.',
     holes: 18,
+    logoUrl: LOGO('keilir.png'),
   },
   {
     id: 'alftanesvollur',
@@ -58,6 +66,7 @@ export const COURSES: Course[] = [
     lon: -22.0295,
     description: 'Golfklúbbur Álftaness. Scenic coastal course on the Álftanes peninsula near the Presidential residence.',
     holes: 9,
+    logoUrl: LOGO('galftanes.png'),
   },
   {
     id: 'leirdalur',
@@ -69,6 +78,7 @@ export const COURSES: Course[] = [
     lon: -21.88276,
     description: 'Golfklúbbur Kópavogs og Garðabæjar. Well-appointed course in the capital suburbs.',
     holes: 18,
+    logoUrl: LOGO('gkg.png'),
   },
   {
     id: 'nesvollur',
@@ -80,6 +90,7 @@ export const COURSES: Course[] = [
     lon: -22.029347,
     description: 'Nesklúbburinn. Ocean-side course on the Seltjarnarnes peninsula with panoramic views.',
     holes: 18,
+    logoUrl: LOGO('nesklubburinn.png'),
   },
   {
     id: 'setbergsvollur',
@@ -91,6 +102,7 @@ export const COURSES: Course[] = [
     lon: -21.923019,
     description: 'Golfklúbburinn Setberg. Welcoming 9-hole club in Hafnarfjörður.',
     holes: 9,
+    logoUrl: LOGO('setberg.jpg'),
   },
   {
     id: 'urridavollur',
@@ -102,6 +114,7 @@ export const COURSES: Course[] = [
     lon: -21.89612,
     description: 'Golfklúbburinn Oddur. Course set around the Urriðavatn lake in Garðabær.',
     holes: 18,
+    logoUrl: LOGO('oddur.png'),
   },
 
   // ── Reykjanes ────────────────────────────────────────────────────────
@@ -115,6 +128,7 @@ export const COURSES: Course[] = [
     lon: -22.59722,
     description: 'Golfklúbbur Suðurnesja. Full 18-hole course near Keflavík on the Reykjanes peninsula.',
     holes: 18,
+    logoUrl: LOGO('gsudurnes.png'),
   },
   {
     id: 'husatoftavollur',
@@ -126,6 +140,7 @@ export const COURSES: Course[] = [
     lon: -22.5092,
     description: 'Golfklúbbur Grindavíkur. Course on the lava fields near the Blue Lagoon.',
     holes: 9,
+    logoUrl: LOGO('grindavik.webp'),
   },
   {
     id: 'kalfatjarnarvollur',
@@ -137,6 +152,7 @@ export const COURSES: Course[] = [
     lon: -22.29115,
     description: 'Golfklúbbur Vatnsleysustrandar. Coastal course in the Vatnsleysuströnd area.',
     holes: 9,
+    logoUrl: LOGO('vatnsleysustrond.jpg'),
   },
   {
     id: 'kirkjubolsvollur',
@@ -148,6 +164,7 @@ export const COURSES: Course[] = [
     lon: -22.69508,
     description: 'Golfklúbbur Sandgerðis. Course near the southwestern tip of the Reykjanes peninsula.',
     holes: 9,
+    logoUrl: LOGO('sandgerdi.jpg'),
   },
 
   // ── South Iceland ────────────────────────────────────────────────────
@@ -161,6 +178,7 @@ export const COURSES: Course[] = [
     lon: -21.18556,
     description: 'Golfklúbbur Hveragerðis. Course in the geothermal town of Hveragerði.',
     holes: 9,
+    logoUrl: LOGO('hveragerdi.jpg'),
   },
   {
     id: 'haukadalsvollur',
@@ -183,6 +201,7 @@ export const COURSES: Course[] = [
     lon: -20.77878,
     description: 'Golfklúbbur Kiðjabergs. Rural course in the South Iceland lowlands.',
     holes: 9,
+    logoUrl: LOGO('kidjaberg.png'),
   },
   {
     id: 'selsvollur',
@@ -194,6 +213,7 @@ export const COURSES: Course[] = [
     lon: -20.35916,
     description: 'Golfklúbburinn Flúðir. Course in the geothermal village of Flúðir.',
     holes: 9,
+    logoUrl: LOGO('fludir.png'),
   },
   {
     id: 'strandarvollur',
@@ -205,6 +225,7 @@ export const COURSES: Course[] = [
     lon: -20.30655,
     description: 'Golfklúbbur Hellu. Course on the South Iceland plains near Hella.',
     holes: 9,
+    logoUrl: LOGO('hella.jpg'),
   },
   {
     id: 'svarfholsvollur',
@@ -216,6 +237,7 @@ export const COURSES: Course[] = [
     lon: -20.97853,
     description: 'Golfklúbbur Selfoss. The main 18-hole course serving the largest town in South Iceland.',
     holes: 18,
+    logoUrl: LOGO('selfoss.png'),
   },
   {
     id: 'uthlidarvollur',
@@ -227,6 +249,7 @@ export const COURSES: Course[] = [
     lon: -20.4364,
     description: 'Golfklúbburinn Úthlíð. Course in the Bláskógarbyggð highlands.',
     holes: 9,
+    logoUrl: LOGO('uthlid.jpg'),
   },
   {
     id: 'vestmannaeyjar',
@@ -238,6 +261,7 @@ export const COURSES: Course[] = [
     lon: -20.29779,
     description: 'Golfklúbbur Vestmannaeyja. Island course surrounded by dramatic volcanic scenery.',
     holes: 18,
+    logoUrl: LOGO('vstmannaeyjar.jpg'),
   },
   {
     id: 'vik',
@@ -249,6 +273,7 @@ export const COURSES: Course[] = [
     lon: -18.9934,
     description: 'Golfklúbburinn Vík. Course near Iceland\'s southernmost point and famous black sand beaches.',
     holes: 9,
+    logoUrl: LOGO('golfklubburinn-vik.jpg'),
   },
   {
     id: 'thorlaksvollur',
@@ -260,6 +285,7 @@ export const COURSES: Course[] = [
     lon: -21.37457,
     description: 'Golfklúbbur Þorlákshafnar. Coastal course near the Vestmannaeyjar ferry terminal.',
     holes: 9,
+    logoUrl: LOGO('thorlakshofn.jpg'),
   },
   {
     id: 'thverarvolur',
@@ -282,6 +308,7 @@ export const COURSES: Course[] = [
     lon: -20.92182,
     description: 'Golfklúbbur Öndverðarness. Rural course south of Selfoss.',
     holes: 9,
+    logoUrl: LOGO('ondverdarness.jpg'),
   },
 
   // ── West Iceland ─────────────────────────────────────────────────────
@@ -295,6 +322,7 @@ export const COURSES: Course[] = [
     lon: -20.65962,
     description: 'Golfklúbburinn Dalbúi. Inland course in the Borgarfjörður region.',
     holes: 9,
+    logoUrl: LOGO('dalbui.jpg'),
   },
   {
     id: 'frodarvollur',
@@ -306,6 +334,7 @@ export const COURSES: Course[] = [
     lon: -23.6094,
     description: 'Golfklúbburinn Jökull. Remote Snæfellsnes course near Ólafsvík with glacier views.',
     holes: 9,
+    logoUrl: LOGO('jokull.jpg'),
   },
   {
     id: 'gardavollur-akranes',
@@ -317,6 +346,7 @@ export const COURSES: Course[] = [
     lon: -22.03493,
     description: 'Golfklúbburinn Leynir. Well-regarded 18-hole course in the town of Akranes.',
     holes: 18,
+    logoUrl: LOGO('leynir.jpg'),
   },
   {
     id: 'gardavollur-jokli',
@@ -328,6 +358,7 @@ export const COURSES: Course[] = [
     lon: -23.1391,
     description: 'Golfklúbbur Staðarsveitar. Course under the Snæfellsjökull glacier on the Snæfellsnes peninsula.',
     holes: 9,
+    logoUrl: LOGO('stadarsveit.jpg'),
   },
   {
     id: 'glannavollur',
@@ -339,6 +370,7 @@ export const COURSES: Course[] = [
     lon: -21.55107,
     description: 'Golfklúbburinn Glanni. Course near the Glanni waterfall in the Norðurá river valley.',
     holes: 9,
+    logoUrl: LOGO('glanni.png'),
   },
   {
     id: 'grundarfjardarvollur',
@@ -361,6 +393,7 @@ export const COURSES: Course[] = [
     lon: -21.87828,
     description: 'Golfklúbbur Borgarness. Course near the historic settlement-age town of Borgarnes.',
     holes: 9,
+    logoUrl: LOGO('borgarnes.png'),
   },
   {
     id: 'husafellsvollur',
@@ -418,6 +451,7 @@ export const COURSES: Course[] = [
     lon: -23.62,
     description: 'Golfklúbbur Bíldudals. Small course in the remote Westfjords village of Bíldudal.',
     holes: 9,
+    logoUrl: LOGO('golfklubbur-bildudals.png'),
   },
   {
     id: 'medaldalsvollur',
@@ -429,6 +463,7 @@ export const COURSES: Course[] = [
     lon: -23.5911,
     description: 'Golfklúbburinn Gláma. Course in the Meðaldalur valley near Þingeyri.',
     holes: 9,
+    logoUrl: LOGO('glama.png'),
   },
   {
     id: 'skeljavikurvollur',
@@ -462,6 +497,7 @@ export const COURSES: Course[] = [
     lon: -23.19266,
     description: 'Golfklúbbur Ísafjarðar. Course in the Tungudalur valley near the Westfjords capital.',
     holes: 9,
+    logoUrl: LOGO('isafjordur.jpg'),
   },
   {
     id: 'vesturbotn',
@@ -473,6 +509,7 @@ export const COURSES: Course[] = [
     lon: -23.8131,
     description: 'Golfklúbbur Patreksfjarðar. Remote Westfjords course with open fjord views.',
     holes: 9,
+    logoUrl: LOGO('patreksfjordur.jpg'),
   },
 
   // ── North Iceland ─────────────────────────────────────────────────────
@@ -508,6 +545,7 @@ export const COURSES: Course[] = [
     lon: -20.2976,
     description: 'Golfklúbbur Skagastrandar. Coastal course in the small town of Skagaströnd.',
     holes: 9,
+    logoUrl: LOGO('skagastrond.jpg'),
   },
   {
     id: 'hlidarendavollur',
@@ -519,6 +557,7 @@ export const COURSES: Course[] = [
     lon: -19.6657,
     description: 'Golfklúbbur Skagafjarðar. Course in Sauðárkrókur in the scenic Skagafjörður region.',
     holes: 9,
+    logoUrl: LOGO('skagafjordur.jpg'),
   },
   {
     id: 'jadarsvollur',
@@ -530,6 +569,7 @@ export const COURSES: Course[] = [
     lon: -18.11628,
     description: 'Golfklúbbur Akureyrar. Famous 18-hole course — one of the world\'s northernmost, known for midnight sun golf.',
     holes: 18,
+    logoUrl: LOGO('gba.png'),
   },
   {
     id: 'katlavollur',
@@ -541,6 +581,7 @@ export const COURSES: Course[] = [
     lon: -17.33737,
     description: 'Golfklúbbur Húsavíkur. Course in the whale watching capital of Iceland.',
     holes: 9,
+    logoUrl: LOGO('husavik.jpg'),
   },
   {
     id: 'krossdalsvollur',
@@ -563,6 +604,7 @@ export const COURSES: Course[] = [
     lon: -17.8773,
     description: 'Golfklúbburinn Lundur. Scenic course in the birch-clad Fnjóskadalur valley.',
     holes: 9,
+    logoUrl: LOGO('lundur.png'),
   },
   {
     id: 'siglogolf',
@@ -574,6 +616,7 @@ export const COURSES: Course[] = [
     lon: -18.9223,
     description: 'Golfklúbbur Siglufjarðar. Course in the former herring capital of Iceland, ringed by mountains.',
     holes: 9,
+    logoUrl: LOGO('siglufjordur.png'),
   },
   {
     id: 'skeggjabrekkuvollur',
@@ -585,6 +628,7 @@ export const COURSES: Course[] = [
     lon: -18.686,
     description: 'Golfklúbbur Fjallabyggðar. Mountain-framed course in the scenic Ólafsfjörður valley.',
     holes: 9,
+    logoUrl: LOGO('fjallabyggd.jpg'),
   },
   {
     id: 'vatnahverfi',
@@ -596,6 +640,7 @@ export const COURSES: Course[] = [
     lon: -20.234,
     description: 'Golfklúbburinn Ós. Course in Blönduós on the banks of the Blanda river.',
     holes: 9,
+    logoUrl: LOGO('os.jpg'),
   },
 
   // ── East Iceland ──────────────────────────────────────────────────────
@@ -620,6 +665,7 @@ export const COURSES: Course[] = [
     lon: -14.449986,
     description: 'Golfklúbbur Fljótsdalshéraðs. Course in the Fljótsdalshérað valley near Egilsstaðir.',
     holes: 9,
+    logoUrl: LOGO('fljotsdalsherad.png'),
   },
   {
     id: 'graenanesvollur',
@@ -631,6 +677,7 @@ export const COURSES: Course[] = [
     lon: -13.77152,
     description: 'Golfklúbbur Norðfjarðar. Course in Neskaupsstaður in the East Iceland fjords.',
     holes: 9,
+    logoUrl: LOGO('nordfjordur.jpg'),
   },
   {
     id: 'hagavollur',
@@ -664,6 +711,7 @@ export const COURSES: Course[] = [
     lon: -15.2101,
     description: 'Golfklúbbur Hornafjarðar. Course near Höfn with views of the Vatnajökull glacier.',
     holes: 9,
+    logoUrl: LOGO('hornafjordur.png'),
   },
   {
     id: 'skhalavollur',
@@ -727,5 +775,6 @@ export function getDistanceKm(
 }
 
 export function getCourseImageUrl(course: Course, width = 800, height = 400): string {
+  if (course.logoUrl) return course.logoUrl;
   return `https://picsum.photos/seed/${course.id}/${width}/${height}`;
 }

@@ -8,7 +8,7 @@ export interface Course {
   lon: number;
   description: string;
   holes: number;
-  imageId?: string; // picsum seed
+  logoUrl?: string; // club logo from rastimar.golf.is
 }
 
 export interface CurrentWeather {

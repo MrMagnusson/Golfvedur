@@ -776,12 +776,12 @@ export function getDistanceKm(
 
 // Curated golf course landscape photos (Unsplash) — used as fallback when no club logo is available
 const FALLBACK_PHOTOS = [
-  'photo-1582483955632', // sunrise, emerald fairway
-  'photo-1614922572383', // golden hour, misty course
-  'photo-1609668959307', // morning light, lush green
-  'photo-1694209863469', // dramatic sky, fairway
-  'photo-1725835567442', // sunrise glow, course
-  'photo-1761141987961', // serene morning, golf green
+  'photo-1582483955632-66bf303c11dc', // sunrise over bunker & fairway
+  'photo-1614922572383-15c2ea254939', // golden hour, misty course
+  'photo-1694209863469-8ba7eba63fe5', // dramatic sky, fairway
+  'photo-1725835567442-7f39d9199f8c', // sunrise glow, course
+  'photo-1761141987961-ed96a841fe21', // serene morning, golf green
+  'photo-1707305571316-768422d5ce88', // lush fairway landscape
 ];
 
 function hashCourseId(id: string): number {

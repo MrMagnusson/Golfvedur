@@ -8,6 +8,7 @@ import { WeatherIcon } from '@/components/WeatherIcon';
 import { Course, CourseWithWeather } from '@/lib/types';
 import { getPlayabilityStatus, getPlayabilityColor, formatTime } from '@/lib/weather';
 import { getCourseById } from '@/lib/courses';
+import { getCourseImageUrl } from '@/lib/courses';
 
 async function loadWeather(course: Course): Promise<CourseWithWeather> {
   const res = await fetch(`/api/weather?lat=${course.lat}&lon=${course.lon}`);
@@ -25,7 +26,8 @@ function FavoriteCourseCard({
   onRemove: (id: string) => void;
   isManaging: boolean;
 }) {
-  const imageUrl = `https://picsum.photos/seed/${course.id}/800/400`;
+  const logoUrl = course.logoUrl ?? null;
+  const fallbackUrl = getCourseImageUrl(course, 800, 400);
   const status = course.weather ? getPlayabilityStatus(course.weather.current) : null;
   const statusColor = status ? getPlayabilityColor(status) : '';
 
@@ -45,12 +47,27 @@ function FavoriteCourseCard({
       <Link href={`/course/${course.id}`} className={isManaging ? 'pointer-events-none' : ''}>
         {/* Course image strip */}
         <div className="h-36 relative overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt={course.name}
-            className="w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 transition-all duration-500 opacity-70"
-          />
+          {logoUrl ? (
+            /* Club logo on dark gradient background */
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0d2b1e] to-[#1a3d2b]" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={logoUrl}
+                alt={`${course.name} logo`}
+                className="absolute inset-0 m-auto w-20 h-20 object-contain drop-shadow-lg"
+                style={{ top: 0, left: 0, right: 0, bottom: 0, margin: 'auto' }}
+              />
+            </>
+          ) : (
+            /* Fallback: picsum landscape photo */
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={fallbackUrl}
+              alt={course.name}
+              className="w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 transition-all duration-500 opacity-70"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent" />
 
           {/* Temperature badge */}

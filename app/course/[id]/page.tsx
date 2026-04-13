@@ -74,6 +74,7 @@ export default function CourseDetailPage() {
 
   const isFav = favorites.includes(course.id);
   const imageUrl = `https://picsum.photos/seed/${course.id}/800/500`;
+  const logoUrl = course.logoUrl ?? null;
   const status = weather ? getPlayabilityStatus(weather.current) : null;
   const statusColor = status ? getPlayabilityColor(status) : '';
   const today = weather?.daily[0];
@@ -98,6 +99,14 @@ export default function CourseDetailPage() {
             className="absolute inset-0 w-full h-full object-cover opacity-60"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+
+          {/* Club logo badge */}
+          {logoUrl && (
+            <div className="absolute top-20 left-5 w-16 h-16 rounded-xl bg-surface-container/80 backdrop-blur-md flex items-center justify-center shadow-lg ring-1 ring-white/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt={`${course.name} logo`} className="w-11 h-11 object-contain" />
+            </div>
+          )}
 
           {/* Favorite button */}
           <button

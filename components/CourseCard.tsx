@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CourseWithWeather, PlayabilityStatus } from '@/lib/types';
 import { getPlayabilityStatus, getPlayabilityColor, getWeatherInfo } from '@/lib/weather';
 import { WeatherIcon } from './WeatherIcon';
+import { getCourseImageUrl } from '@/lib/courses';
 
 interface CourseCardProps {
   course: CourseWithWeather;
@@ -51,7 +52,7 @@ function SkeletonCard({ variant }: { variant: 'grid' | 'list' }) {
 
 export function CourseCard({ course, variant = 'grid' }: CourseCardProps) {
   const logoUrl = course.logoUrl ?? null;
-  const fallbackUrl = `https://picsum.photos/seed/${course.id}/800/400`;
+  const fallbackUrl = getCourseImageUrl(course, 800, 400);
 
   if (!course.weather) {
     return <SkeletonCard variant={variant} />;

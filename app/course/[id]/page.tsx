@@ -14,7 +14,7 @@ import {
   formatTime,
   formatDay,
 } from '@/lib/weather';
-import { getCourseById } from '@/lib/courses';
+import { getCourseById, getCourseImageUrl } from '@/lib/courses';
 
 function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -73,7 +73,7 @@ export default function CourseDetailPage() {
   }
 
   const isFav = favorites.includes(course.id);
-  const imageUrl = `https://picsum.photos/seed/${course.id}/800/500`;
+  const imageUrl = getCourseImageUrl(course, 800, 500);
   const logoUrl = course.logoUrl ?? null;
   const status = weather ? getPlayabilityStatus(weather.current) : null;
   const statusColor = status ? getPlayabilityColor(status) : '';

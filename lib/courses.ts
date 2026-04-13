@@ -774,7 +774,24 @@ export function getDistanceKm(
   return Math.round(6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
+// Curated golf course landscape photos (Unsplash) — used as fallback when no club logo is available
+const FALLBACK_PHOTOS = [
+  'photo-1582483955632', // sunrise, emerald fairway
+  'photo-1614922572383', // golden hour, misty course
+  'photo-1609668959307', // morning light, lush green
+  'photo-1694209863469', // dramatic sky, fairway
+  'photo-1725835567442', // sunrise glow, course
+  'photo-1761141987961', // serene morning, golf green
+];
+
+function hashCourseId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
 export function getCourseImageUrl(course: Course, width = 800, height = 400): string {
   if (course.logoUrl) return course.logoUrl;
-  return `https://picsum.photos/seed/${course.id}/${width}/${height}`;
+  const photo = FALLBACK_PHOTOS[hashCourseId(course.id) % FALLBACK_PHOTOS.length];
+  return `https://images.unsplash.com/${photo}?auto=format&fit=crop&w=${width}&h=${height}&q=80`;
 }

@@ -50,7 +50,8 @@ function SkeletonCard({ variant }: { variant: 'grid' | 'list' }) {
 }
 
 export function CourseCard({ course, variant = 'grid' }: CourseCardProps) {
-  const imageUrl = `https://picsum.photos/seed/${course.id}/800/400`;
+  const logoUrl = course.logoUrl ?? null;
+  const fallbackUrl = `https://picsum.photos/seed/${course.id}/800/400`;
 
   if (!course.weather) {
     return <SkeletonCard variant={variant} />;
@@ -65,13 +66,14 @@ export function CourseCard({ course, variant = 'grid' }: CourseCardProps) {
       <Link href={`/course/${course.id}`} className="block group animate-fade-in">
         <div className="flex items-center gap-4 p-4 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-all duration-200">
           {/* Thumbnail */}
-          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt={course.name}
-              className="w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 transition-all duration-300"
-            />
+          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 relative bg-[#0d2b1e] flex items-center justify-center">
+            {logoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={logoUrl} alt={`${course.shortName} logo`} className="w-14 h-14 object-contain" />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={fallbackUrl} alt={course.name} className="w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 transition-all duration-300" />
+            )}
           </div>
 
           {/* Info */}
@@ -103,14 +105,18 @@ export function CourseCard({ course, variant = 'grid' }: CourseCardProps) {
   return (
     <Link href={`/course/${course.id}`} className="block group animate-fade-in">
       <div className="flex flex-col rounded-xl overflow-hidden bg-surface-container-low hover:bg-surface-container-high transition-all duration-300">
-        {/* Course image */}
+        {/* Course image / logo */}
         <div className="h-40 relative overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt={course.name}
-            className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
-          />
+          {logoUrl ? (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0d2b1e] to-[#1a3d2b]" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt={`${course.shortName} logo`} className="absolute inset-0 m-auto w-24 h-24 object-contain drop-shadow-lg" style={{ top: 0, left: 0, right: 0, bottom: 0, margin: 'auto' }} />
+            </>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={fallbackUrl} alt={course.name} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent" />
           <div className="absolute top-3 right-3">
             <PlayabilityChip status={status} />

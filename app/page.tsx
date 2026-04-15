@@ -23,6 +23,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [showOptimalSheet, setShowOptimalSheet] = useState(false);
   const loadedRef = useRef(false);
 
   // Load courses list
@@ -118,6 +119,11 @@ export default function HomePage() {
     (c) => c.weather!.current.windSpeed > 10
   );
 
+  // Courses with optimal (Playable) conditions right now
+  const optimalCourses = loadedWithWeather.filter(
+    (c) => getPlayabilityStatus(c.weather!.current) === 'Playable'
+  );
+
   // Get today's sunrise/sunset from first loaded course
   const firstWithWeather = loadedWithWeather[0];
   const todaySunrise = firstWithWeather?.weather?.daily[0]?.sunrise;
@@ -157,21 +163,34 @@ export default function HomePage() {
           </form>
         </section>
 
-        {/* Hero Status Banner */}
-        <section className="relative overflow-hidden rounded-3xl p-7 bg-gradient-to-br from-primary-container to-surface-container-low min-h-[200px] flex flex-col justify-end">
-          <div className="absolute top-5 right-5 opacity-15">
-            <span
-              className="material-symbols-outlined text-[110px]"
-              style={{ fontVariationSettings: "'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 48" }}
-            >
-              {heroIcon}
-            </span>
-          </div>
-          <div className="relative z-10">
-            <span className="label-meta text-primary mb-2 block">Current Condition</span>
-            <h2 className="font-headline text-3xl font-bold text-on-surface">{heroTitle}</h2>
-            <p className="text-on-surface-variant mt-1.5 text-sm max-w-xs">{heroDescription}</p>
-          </div>
+        {/* Hero Status Banner — tappable when playable courses are loaded */}
+        <section>
+          <button
+            onClick={() => optimalCourses.length > 0 && setShowOptimalSheet(true)}
+            className="w-full text-left relative overflow-hidden rounded-3xl p-7 bg-gradient-to-br from-primary-container to-surface-container-low min-h-[200px] flex flex-col justify-end transition-opacity active:opacity-80"
+          >
+            <div className="absolute top-5 right-5 opacity-15">
+              <span
+                className="material-symbols-outlined text-[110px]"
+                style={{ fontVariationSettings: "'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 48" }}
+              >
+                {heroIcon}
+              </span>
+            </div>
+            <div className="relative z-10">
+              <span className="label-meta text-primary mb-2 block">Current Condition</span>
+              <h2 className="font-headline text-3xl font-bold text-on-surface">{heroTitle}</h2>
+              <p className="text-on-surface-variant mt-1.5 text-sm max-w-xs">{heroDescription}</p>
+              {optimalCourses.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-3 text-primary">
+                  <span className="text-xs font-bold tracking-wide uppercase">
+                    {optimalCourses.length} course{optimalCourses.length !== 1 ? 's' : ''} playable now
+                  </span>
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </div>
+              )}
+            </div>
+          </button>
         </section>
 
         {/* Nearby Courses */}
@@ -252,6 +271,81 @@ export default function HomePage() {
       </main>
 
       <BottomNav />
+
+      {/* Optimal conditions bottom sheet */}
+      {showOptimalSheet && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowOptimalSheet(false)}
+          />
+
+          {/* Sheet */}
+          <div className="relative bg-surface rounded-t-3xl max-h-[80vh] flex flex-col shadow-2xl">
+            {/* Handle + header */}
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-surface-container flex-shrink-0">
+              <div className="absolute left-1/2 -translate-x-1/2 top-3 w-10 h-1 bg-outline-variant rounded-full" />
+              <div className="pt-3">
+                <h3 className="font-headline text-lg font-bold text-on-surface">Playable Now</h3>
+                <p className="text-outline text-xs mt-0.5">
+                  {optimalCourses.length} course{optimalCourses.length !== 1 ? 's' : ''} with optimal conditions
+                </p>
+              </div>
+              <button
+                onClick={() => setShowOptimalSheet(false)}
+                className="p-2 rounded-full bg-surface-container text-outline mt-3"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            {/* Course list */}
+            <div className="overflow-y-auto px-4 py-3 space-y-2 pb-8">
+              {optimalCourses.map((course) => {
+                const w = course.weather!.current;
+                const { icon } = getWeatherInfo(w.weatherCode);
+                return (
+                  <Link
+                    key={course.id}
+                    href={`/course/${course.id}`}
+                    onClick={() => setShowOptimalSheet(false)}
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-low active:bg-surface-container transition-colors"
+                  >
+                    {/* Club logo or icon */}
+                    <div className="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                      {course.logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={course.logoUrl} alt="" className="w-8 h-8 object-contain" />
+                      ) : (
+                        <span className="material-symbols-outlined text-primary text-xl">golf_course</span>
+                      )}
+                    </div>
+
+                    {/* Name + location */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-headline font-bold text-on-surface truncate">{course.shortName}</p>
+                      <p className="text-outline text-xs truncate">{course.location}</p>
+                    </div>
+
+                    {/* Weather snapshot */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span
+                        className="material-symbols-outlined text-primary text-[18px]"
+                        style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
+                      >
+                        {icon}
+                      </span>
+                      <span className="font-headline text-lg font-bold text-on-surface">{w.temperature}°</span>
+                      <span className="material-symbols-outlined text-outline-variant text-[16px]">chevron_right</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

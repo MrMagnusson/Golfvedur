@@ -33,6 +33,18 @@ export const COURSES: Course[] = [
     logoUrl: LOGO('gr.svg'),
   },
   {
+    id: 'korpulfstadir',
+    name: 'Korpúlfstaðarvöllur',
+    shortName: 'Korpúlfstaðir',
+    location: 'Reykjavík',
+    region: 'Capital Region',
+    lat: 64.1534,
+    lon: -21.7587,
+    description: 'Golfklúbbur Reykjavíkur. Second course of the oldest club in Iceland, set in the Korpúlfsstaðir area.',
+    holes: 18,
+    logoUrl: LOGO('gr.svg'),
+  },
+  {
     id: 'hlidavollur',
     name: 'Hlíðavöllur / Bakkakotsvöllur',
     shortName: 'Hlíðavöllur',

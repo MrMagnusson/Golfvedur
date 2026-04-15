@@ -14,7 +14,7 @@ import {
   formatTime,
   formatDay,
 } from '@/lib/weather';
-import { getCourseById, getCourseImageUrl } from '@/lib/courses';
+import { getCourseById, getCoursePhotoUrl } from '@/lib/courses';
 
 function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -73,7 +73,7 @@ export default function CourseDetailPage() {
   }
 
   const isFav = favorites.includes(course.id);
-  const imageUrl = getCourseImageUrl(course, 800, 500);
+  const imageUrl = getCoursePhotoUrl(course, 800, 500); // always landscape, never the logo
   const logoUrl = course.logoUrl ?? null;
   const status = weather ? getPlayabilityStatus(weather.current) : null;
   const statusColor = status ? getPlayabilityColor(status) : '';
@@ -122,54 +122,59 @@ export default function CourseDetailPage() {
             </span>
           </button>
 
-          {/* Course info overlay */}
-          <div className="absolute bottom-6 left-5 right-5 flex justify-between items-end">
-            <div className="space-y-1">
-              <h2 className="font-headline text-3xl font-bold tracking-tight text-on-surface uppercase">
-                {course.shortName}
-              </h2>
-              <div className="flex items-center gap-1.5 text-tertiary">
-                <span className="material-symbols-outlined text-[16px]">location_on</span>
-                <span className="font-label text-xs font-semibold tracking-widest uppercase">
-                  {course.location}, ISL
-                </span>
+          {/* Course info overlay — stacked to prevent overflow on narrow screens */}
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-6 space-y-2">
+            {/* Row 1: name (left) + temperature (right) */}
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex-1 min-w-0 space-y-1">
+                <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface uppercase leading-tight">
+                  {course.shortName}
+                </h2>
+                <div className="flex items-center gap-1.5 text-tertiary">
+                  <span className="material-symbols-outlined text-[14px]">location_on</span>
+                  <span className="font-label text-[11px] font-semibold tracking-widest uppercase">
+                    {course.location}, ISL
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {loading ? (
-              <div className="h-16 w-24 skeleton rounded-xl" />
-            ) : weather ? (
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-headline text-6xl font-bold text-on-surface">
+              {loading ? (
+                <div className="h-14 w-20 skeleton rounded-xl flex-shrink-0" />
+              ) : weather ? (
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className="font-headline text-5xl font-bold text-on-surface leading-none">
                     {weather.current.temperature}°
                   </span>
                   <WeatherIcon
                     code={weather.current.weatherCode}
-                    className="text-tertiary text-4xl"
+                    className="text-tertiary text-3xl"
                     filled
                   />
                 </div>
-                <div className="flex gap-2">
-                  {status && (
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
-                      {status}
-                    </span>
-                  )}
-                  <span className="bg-primary-container px-3 py-1 rounded-full flex items-center gap-1">
-                    <span
-                      className="material-symbols-outlined text-[12px] text-on-primary-container"
-                      style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
-                    >
-                      air
-                    </span>
-                    <span className="text-[10px] font-bold text-on-primary-container uppercase">
-                      {weather.current.windSpeed} m/s
-                    </span>
+              ) : null}
+            </div>
+
+            {/* Row 2: playability + wind badges */}
+            {!loading && weather && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {status && (
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
+                    {status}
                   </span>
-                </div>
+                )}
+                <span className="bg-primary-container/90 px-3 py-1 rounded-full flex items-center gap-1">
+                  <span
+                    className="material-symbols-outlined text-[12px] text-on-primary-container"
+                    style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
+                  >
+                    air
+                  </span>
+                  <span className="text-[10px] font-bold text-on-primary-container uppercase">
+                    {weather.current.windSpeed} m/s
+                  </span>
+                </span>
               </div>
-            ) : null}
+            )}
           </div>
         </section>
 

@@ -802,8 +802,16 @@ function hashCourseId(id: string): number {
   return h;
 }
 
-export function getCourseImageUrl(course: Course, width = 800, height = 400): string {
-  if (course.logoUrl) return course.logoUrl;
+/** Returns the Unsplash landscape photo for the course (never the club logo).
+ *  Use this for hero backgrounds where the logo would look wrong stretched. */
+export function getCoursePhotoUrl(course: Course, width = 800, height = 500): string {
   const photo = FALLBACK_PHOTOS[hashCourseId(course.id) % FALLBACK_PHOTOS.length];
   return `https://images.unsplash.com/${photo}?auto=format&fit=crop&w=${width}&h=${height}&q=80`;
+}
+
+/** Returns the club logo if available, otherwise a landscape photo.
+ *  Use this for card thumbnails where the logo is the preferred visual. */
+export function getCourseImageUrl(course: Course, width = 800, height = 400): string {
+  if (course.logoUrl) return course.logoUrl;
+  return getCoursePhotoUrl(course, width, height);
 }

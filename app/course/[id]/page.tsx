@@ -92,23 +92,33 @@ export default function CourseDetailPage() {
       <main className="pt-16">
         {/* Hero Section */}
         <section className="relative h-[380px] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt={course.name}
-            className="absolute inset-0 w-full h-full object-cover opacity-60"
-          />
+          {logoUrl ? (
+            /* Logo hero: dark emerald gradient + centred club logo */
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-[#071a10] via-[#0d2b1e] to-[#0a1f16]" />
+              {/* Subtle radial glow behind logo */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={logoUrl}
+                alt={`${course.name} logo`}
+                className="absolute inset-0 m-auto w-48 h-48 object-contain drop-shadow-2xl"
+              />
+            </>
+          ) : (
+            /* Photo hero: landscape golf course image */
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={imageUrl}
+              alt={course.name}
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-          {/* Club logo badge */}
-          {logoUrl && (
-            <div className="absolute top-20 left-5 w-16 h-16 rounded-xl bg-surface-container/80 backdrop-blur-md flex items-center justify-center shadow-lg ring-1 ring-white/10">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoUrl} alt={`${course.name} logo`} className="w-11 h-11 object-contain" />
-            </div>
-          )}
-
-          {/* Favorite button */}
+          {/* Favourite button */}
           <button
             onClick={() => toggle(course.id)}
             className="absolute top-5 right-5 p-2.5 glass-panel rounded-full transition-colors z-10"

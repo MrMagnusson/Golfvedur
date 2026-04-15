@@ -303,20 +303,17 @@ export default function CourseDetailPage() {
                 </div>
               )}
 
-              {/* Wind From */}
+              {/* Wind Direction */}
               <div className="bg-surface-container-high p-5 rounded-xl flex flex-col justify-between h-28 relative overflow-hidden">
-                <span className="label-meta z-10">Wind From</span>
+                <span className="label-meta z-10">Wind Dir.</span>
                 <div className="flex items-center gap-2 z-10">
                   <WindArrow
                     direction={weather.current.windDirection}
                     className="text-tertiary text-2xl"
                   />
-                  <div className="flex flex-col leading-none z-10">
-                    <span className="text-[9px] font-bold text-outline uppercase tracking-wider">from</span>
-                    <span className="font-headline text-2xl font-bold">
-                      {getWindDirection(weather.current.windDirection)}
-                    </span>
-                  </div>
+                  <span className="font-headline text-2xl font-bold">
+                    {getWindDirection(weather.current.windDirection)}
+                  </span>
                 </div>
               </div>
 

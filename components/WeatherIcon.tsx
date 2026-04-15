@@ -28,10 +28,13 @@ interface WindArrowProps {
 }
 
 export function WindArrow({ direction, className = '' }: WindArrowProps) {
+  // direction is wind_from_direction; add 180° so the arrow points
+  // where the wind is blowing TO (direction of travel)
+  const toDeg = (direction + 180) % 360;
   return (
     <span
       className={`material-symbols-outlined ${className}`}
-      style={{ transform: `rotate(${direction}deg)`, display: 'inline-block' }}
+      style={{ transform: `rotate(${toDeg}deg)`, display: 'inline-block' }}
     >
       navigation
     </span>

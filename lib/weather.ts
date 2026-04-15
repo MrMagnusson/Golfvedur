@@ -222,26 +222,28 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
     humidity:            Math.round(inst.relative_humidity ?? 0),
   };
 
-  // ── Hourly (next 24 h) ───────────────────────────────────────────────────
-  const cutoff = nowMs + 25 * 3_600_000;
-  const hourlySlots = ts.filter((e: Timeslot) => {
-    const t = new Date(e.time).getTime();
-    return t >= nowMs && t <= cutoff;
-  }).slice(0, 24);
-
-  const hourly: HourlyForecast[] = hourlySlots.map((e: Timeslot) => {
-    const d   = e.data.instant.details;
-    const n1  = e.data.next_1_hours ?? e.data.next_6_hours;
-    const sym = parseSymbol(n1?.summary?.symbol_code ?? 'cloudy');
-    return {
-      time:                    e.time,
-      temperature:             Math.round(d.air_temperature),
-      precipitationProbability: Math.round(n1?.details?.probability_of_precipitation ?? 0),
-      windSpeed:               Math.round(d.wind_speed * 10) / 10,
-      windDirection:           d.wind_from_direction,
-      weatherCode:             sym.wmoCode,
-    };
-  });
+  // ── Hourly (full 7-day window) ───────────────────────────────────────────
+  // met.no gives 1-hourly data for ~48 h, then 6-hourly beyond that.
+  // We keep all slots so the detail page can show per-day breakdowns.
+  const hourly: HourlyForecast[] = ts
+    .filter((e: Timeslot) => {
+      const t = new Date(e.time).getTime();
+      const hasData = e.data.next_1_hours ?? e.data.next_6_hours;
+      return t >= nowMs && hasData;
+    })
+    .map((e: Timeslot) => {
+      const d   = e.data.instant.details;
+      const n1  = e.data.next_1_hours ?? e.data.next_6_hours;
+      const sym = parseSymbol(n1?.summary?.symbol_code ?? 'cloudy');
+      return {
+        time:                     e.time,
+        temperature:              Math.round(d.air_temperature),
+        precipitationProbability: Math.round(n1?.details?.probability_of_precipitation ?? 0),
+        windSpeed:                Math.round(d.wind_speed * 10) / 10,
+        windDirection:            d.wind_from_direction,
+        weatherCode:              sym.wmoCode,
+      };
+    });
 
   // ── Daily (7 days) ──────────────────────────────────────────────────────
   // Group by Iceland date (UTC = Reykjavik time)

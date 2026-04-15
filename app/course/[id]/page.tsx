@@ -42,6 +42,7 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const { favorites, toggle } = useFavorites();
 
   const course: Course | undefined = getCourseById(id);
@@ -337,40 +338,98 @@ export default function CourseDetailPage() {
           {!loading && weather && (
             <section className="space-y-3 pb-4">
               <h3 className="label-meta px-1">7-Day Outlook</h3>
-              <div className="space-y-px">
-                {weather.daily.map((day, i) => (
-                  <div
-                    key={day.date}
-                    className={`flex items-center justify-between py-4 px-4 bg-surface-container-low ${
-                      i === 0 ? 'rounded-t-xl' : ''
-                    } ${i === weather.daily.length - 1 ? 'rounded-b-xl' : ''}`}
-                  >
-                    <span className="w-12 text-xs font-bold uppercase tracking-wider text-on-surface">
-                      {i === 0 ? 'Today' : formatDay(day.date)}
-                    </span>
-                    <div className="flex items-center gap-2 w-1/3">
-                      <WeatherIcon
-                        code={day.weatherCode}
-                        className={`text-[18px] ${
-                          day.precipitationProbability > 30 ? 'text-tertiary' : 'text-primary'
+              <div className="rounded-xl overflow-hidden">
+                {weather.daily.map((day, i) => {
+                  const isExpanded = expandedDay === day.date;
+                  const isLast = i === weather.daily.length - 1;
+                  // Filter full hourly array to slots belonging to this day
+                  const dayHourly = weather.hourly.filter(h =>
+                    h.time.startsWith(day.date)
+                  );
+
+                  return (
+                    <div key={day.date}>
+                      {/* Day row — tappable */}
+                      <button
+                        onClick={() => setExpandedDay(isExpanded ? null : day.date)}
+                        className={`w-full flex items-center justify-between py-4 px-4 bg-surface-container-low transition-colors active:bg-surface-container ${
+                          !isExpanded && isLast ? '' : 'border-b border-surface-container'
                         }`}
-                      />
-                      {day.precipitationProbability > 5 && (
-                        <span className="text-[10px] font-medium text-outline">
-                          {day.precipitationProbability}%
+                      >
+                        <span className="w-12 text-xs font-bold uppercase tracking-wider text-on-surface text-left">
+                          {i === 0 ? 'Today' : formatDay(day.date)}
                         </span>
+                        <div className="flex items-center gap-2 flex-1">
+                          <WeatherIcon
+                            code={day.weatherCode}
+                            className={`text-[18px] ${
+                              day.precipitationProbability > 30 ? 'text-tertiary' : 'text-primary'
+                            }`}
+                          />
+                          {day.precipitationProbability > 5 && (
+                            <span className="text-[10px] font-medium text-outline">
+                              {day.precipitationProbability}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-headline text-sm font-bold text-outline">
+                            {day.minTemp}°
+                          </span>
+                          <span className="font-headline text-sm font-bold text-on-surface">
+                            {day.maxTemp}°
+                          </span>
+                          <span
+                            className="material-symbols-outlined text-[16px] text-outline ml-1 transition-transform duration-200"
+                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                          >
+                            expand_more
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Hourly breakdown — shown when expanded */}
+                      {isExpanded && (
+                        <div className={`bg-surface-container px-3 py-3 ${isLast ? '' : 'border-b border-surface-container-high'}`}>
+                          {dayHourly.length > 0 ? (
+                            <div className="flex overflow-x-auto gap-2 hide-scrollbar pb-1">
+                              {dayHourly.map(h => (
+                                <div
+                                  key={h.time}
+                                  className="flex-shrink-0 w-16 p-2.5 rounded-xl bg-surface-container-high flex flex-col items-center gap-1.5"
+                                >
+                                  <span className="text-[9px] font-bold text-outline uppercase tracking-wide">
+                                    {formatTime(h.time)}
+                                  </span>
+                                  <WeatherIcon
+                                    code={h.weatherCode}
+                                    className="text-[16px] text-on-surface-variant"
+                                  />
+                                  <span className="font-headline text-sm font-bold">
+                                    {h.temperature}°
+                                  </span>
+                                  <div className="flex flex-col items-center gap-0.5 opacity-70">
+                                    <WindArrow
+                                      direction={h.windDirection}
+                                      className="text-[11px] text-outline"
+                                    />
+                                    <span className="text-[8px] font-bold text-outline">
+                                      {h.windSpeed}m/s
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-outline text-center py-2">
+                              No hourly data available
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-headline text-sm font-bold text-outline">
-                        {day.minTemp}°
-                      </span>
-                      <span className="font-headline text-sm font-bold text-on-surface">
-                        {day.maxTemp}°
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}

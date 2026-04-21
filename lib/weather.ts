@@ -183,25 +183,33 @@ export function getDaylightDuration(sunrise: string, sunset: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Main fetch — met.no locationforecast/2.0/compact
+// met.no fetch
 // ---------------------------------------------------------------------------
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Timeslot = Record<string, any>;
 
-export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
+async function fetchWeatherMetNo(lat: number, lon: number): Promise<WeatherData> {
   const url = `${MET_NO_BASE}?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}`;
 
-  const res = await fetch(url, {
-    headers: { 'User-Agent': MET_NO_USER_AGENT },
-    next: { revalidate: 300 },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: { 'User-Agent': MET_NO_USER_AGENT },
+      signal: controller.signal,
+      next: { revalidate: 300 },
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) throw new Error(`met.no error ${res.status}`);
 
   const data = await res.json();
   const ts: Timeslot[] = data.properties.timeseries;
 
-  // ── Current conditions ──────────────────────────────────────────────────
   const nowMs = Date.now();
   const current1 = ts.reduce((best: Timeslot, entry: Timeslot) => {
     const d = Math.abs(new Date(entry.time).getTime() - nowMs);
@@ -222,9 +230,6 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
     humidity:            Math.round(inst.relative_humidity ?? 0),
   };
 
-  // ── Hourly (full 7-day window) ───────────────────────────────────────────
-  // met.no gives 1-hourly data for ~48 h, then 6-hourly beyond that.
-  // We keep all slots so the detail page can show per-day breakdowns.
   const hourly: HourlyForecast[] = ts
     .filter((e: Timeslot) => {
       const t = new Date(e.time).getTime();
@@ -245,8 +250,6 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
       };
     });
 
-  // ── Daily (7 days) ──────────────────────────────────────────────────────
-  // Group by Iceland date (UTC = Reykjavik time)
   const byDay = new Map<string, Timeslot[]>();
   for (const e of ts) {
     const day = e.time.slice(0, 10);
@@ -262,7 +265,6 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
     const minTemp = Math.round(Math.min(...temps));
     const maxWind = Math.round(Math.max(...winds) * 10) / 10;
 
-    // Representative symbol: prefer the T12:00 slot, else midpoint
     const midday = entries.find((e: Timeslot) => e.time.includes('T12:00:00')) ??
                    entries[Math.floor(entries.length / 2)];
     const reprSlot = midday?.data?.next_1_hours ?? midday?.data?.next_6_hours ?? midday?.data?.next_12_hours;
@@ -272,16 +274,14 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
       e.data?.next_1_hours?.details?.probability_of_precipitation ??
       e.data?.next_6_hours?.details?.probability_of_precipitation ?? 0
     );
-    const maxPrecip = Math.round(Math.max(...precipProbs));
 
     const { sunrise, sunset } = sunriseSunset(lat, lon, dateStr);
-
     return {
       date:                    dateStr,
       weatherCode:             daySym.wmoCode,
       maxTemp,
       minTemp,
-      precipitationProbability: maxPrecip,
+      precipitationProbability: Math.round(Math.max(...precipProbs)),
       windSpeedMax:            maxWind,
       sunrise,
       sunset,
@@ -289,4 +289,87 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
   });
 
   return { current, hourly, daily };
+}
+
+// ---------------------------------------------------------------------------
+// Open-Meteo fallback — reliable from all server environments
+// ---------------------------------------------------------------------------
+const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
+
+async function fetchWeatherOpenMeteo(lat: number, lon: number): Promise<WeatherData> {
+  const params = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    current: ['temperature_2m','apparent_temperature','wind_speed_10m',
+               'wind_direction_10m','precipitation','weather_code',
+               'relative_humidity_2m'].join(','),
+    hourly: ['temperature_2m','precipitation_probability','wind_speed_10m',
+              'wind_direction_10m','weather_code'].join(','),
+    daily: ['weather_code','temperature_2m_max','temperature_2m_min',
+             'precipitation_probability_max','wind_speed_10m_max',
+             'sunrise','sunset'].join(','),
+    wind_speed_unit: 'ms',
+    timezone: 'Atlantic/Reykjavik',
+    forecast_days: '7',
+  });
+
+  const res = await fetch(`${OPEN_METEO_BASE}?${params}`, {
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) throw new Error(`Open-Meteo error ${res.status}`);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data: any = await res.json();
+
+  const now = new Date();
+  const currentHourStr = `${now.toISOString().slice(0, 13)}:00`;
+  const hourlyTimes: string[] = data.hourly.time;
+  const startIdx = Math.max(0, hourlyTimes.findIndex((t: string) => t >= currentHourStr));
+
+  const current: CurrentWeather = {
+    temperature:         Math.round(data.current.temperature_2m),
+    apparentTemperature: Math.round(data.current.apparent_temperature),
+    windSpeed:           Math.round(data.current.wind_speed_10m * 10) / 10,
+    windDirection:       data.current.wind_direction_10m,
+    precipitation:       data.current.precipitation,
+    weatherCode:         data.current.weather_code,
+    humidity:            data.current.relative_humidity_2m,
+  };
+
+  // Full 7-day hourly (Open-Meteo provides all of it in one response)
+  const hourly: HourlyForecast[] = hourlyTimes
+    .slice(startIdx)
+    .map((time: string, i: number) => ({
+      time,
+      temperature:              Math.round(data.hourly.temperature_2m[startIdx + i]),
+      precipitationProbability: data.hourly.precipitation_probability[startIdx + i] ?? 0,
+      windSpeed:                Math.round(data.hourly.wind_speed_10m[startIdx + i] * 10) / 10,
+      windDirection:            data.hourly.wind_direction_10m[startIdx + i],
+      weatherCode:              data.hourly.weather_code[startIdx + i],
+    }));
+
+  const daily: DailyForecast[] = (data.daily.time as string[]).map((date: string, i: number) => ({
+    date,
+    weatherCode:              data.daily.weather_code[i],
+    maxTemp:                  Math.round(data.daily.temperature_2m_max[i]),
+    minTemp:                  Math.round(data.daily.temperature_2m_min[i]),
+    precipitationProbability: data.daily.precipitation_probability_max[i] ?? 0,
+    windSpeedMax:             Math.round(data.daily.wind_speed_10m_max[i] * 10) / 10,
+    sunrise:                  data.daily.sunrise[i],
+    sunset:                   data.daily.sunset[i],
+  }));
+
+  return { current, hourly, daily };
+}
+
+// ---------------------------------------------------------------------------
+// Main entry point — met.no preferred, Open-Meteo as automatic fallback
+// ---------------------------------------------------------------------------
+export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
+  try {
+    return await fetchWeatherMetNo(lat, lon);
+  } catch (err) {
+    console.warn('met.no unavailable, falling back to Open-Meteo:', err);
+    return await fetchWeatherOpenMeteo(lat, lon);
+  }
 }

@@ -292,84 +292,247 @@ async function fetchWeatherMetNo(lat: number, lon: number): Promise<WeatherData>
 }
 
 // ---------------------------------------------------------------------------
-// Open-Meteo fallback — reliable from all server environments
+// vedur.is (Veðurstofa Íslands) — Icelandic Meteorological Office
+// Station-based XML forecast API with Beaufort wind and cardinal directions.
+// Accurate local NWP model, accessible from all server environments.
+// Docs: https://www.vedur.is/um-vi/vefthjonustur/
 // ---------------------------------------------------------------------------
-const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 
-async function fetchWeatherOpenMeteo(lat: number, lon: number): Promise<WeatherData> {
-  const params = new URLSearchParams({
-    latitude: String(lat),
-    longitude: String(lon),
-    current: ['temperature_2m','apparent_temperature','wind_speed_10m',
-               'wind_direction_10m','precipitation','weather_code',
-               'relative_humidity_2m'].join(','),
-    hourly: ['temperature_2m','precipitation_probability','wind_speed_10m',
-              'wind_direction_10m','weather_code'].join(','),
-    daily: ['weather_code','temperature_2m_max','temperature_2m_min',
-             'precipitation_probability_max','wind_speed_10m_max',
-             'sunrise','sunset'].join(','),
-    wind_speed_unit: 'ms',
-    timezone: 'Atlantic/Reykjavik',
-    forecast_days: '7',
-  });
+const VEDUR_BASE = 'https://xmlweather.vedur.is/';
 
-  const res = await fetch(`${OPEN_METEO_BASE}?${params}`, {
-    next: { revalidate: 300 },
-  });
-  if (!res.ok) throw new Error(`Open-Meteo error ${res.status}`);
+// Known vedur.is station IDs and their coordinates.
+// We pick the nearest station to the requested lat/lon at query time.
+interface VedurStation { id: number; name: string; lat: number; lon: number }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data: any = await res.json();
+const VEDUR_STATIONS: VedurStation[] = [
+  // Capital Region & SW
+  { id: 1,    name: 'Reykjavík',      lat: 64.133, lon: -21.900 },
+  { id: 422,  name: 'Keflavík',       lat: 63.967, lon: -22.605 },
+  { id: 2911, name: 'Akranes',        lat: 64.317, lon: -22.067 },
+  // South Iceland
+  { id: 1393, name: 'Eyrarbakki',     lat: 63.867, lon: -21.150 },
+  { id: 1475, name: 'Vestmannaeyjar', lat: 63.433, lon: -20.283 },
+  { id: 1919, name: 'Vík',            lat: 63.418, lon: -18.987 },
+  // West Iceland & Snæfellsnes
+  { id: 2000, name: 'Stykkishólmur',  lat: 65.083, lon: -22.733 },
+  // Westfjords
+  { id: 2642, name: 'Ísafjörður',     lat: 66.067, lon: -23.133 },
+  // North Iceland
+  { id: 3454, name: 'Sauðárkrókur',  lat: 65.733, lon: -19.633 },
+  { id: 4820, name: 'Akureyri',       lat: 65.683, lon: -18.083 },
+  { id: 5789, name: 'Siglufjörður',   lat: 66.150, lon: -18.917 },
+  { id: 6061, name: 'Húsavík',        lat: 66.033, lon: -17.317 },
+  { id: 7020, name: 'Mývatn',         lat: 65.600, lon: -16.967 },
+  // East Iceland
+  { id: 7222, name: 'Egilsstaðir',    lat: 65.283, lon: -14.400 },
+  { id: 8410, name: 'Höfn',           lat: 64.267, lon: -15.233 },
+];
 
-  const now = new Date();
-  const currentHourStr = `${now.toISOString().slice(0, 13)}:00`;
-  const hourlyTimes: string[] = data.hourly.time;
-  const startIdx = Math.max(0, hourlyTimes.findIndex((t: string) => t >= currentHourStr));
+/** Haversine distance in km */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function nearestVedurStation(lat: number, lon: number): VedurStation {
+  return VEDUR_STATIONS.reduce((best, s) =>
+    haversineKm(lat, lon, s.lat, s.lon) < haversineKm(lat, lon, best.lat, best.lon) ? s : best
+  );
+}
+
+// Beaufort force → approximate midpoint wind speed in m/s
+const BEAUFORT_MS: Record<number, number> = {
+  0: 0.2, 1: 0.9, 2: 2.4, 3: 4.4, 4: 6.7, 5: 9.3,
+  6: 12.3, 7: 15.5, 8: 18.9, 9: 22.6, 10: 26.4, 11: 30.5, 12: 34.0,
+};
+function beaufortToMs(bf: number): number {
+  return BEAUFORT_MS[Math.round(bf)] ?? Math.round(bf) * 2.9;
+}
+
+// Cardinal / intercardinal direction text → degrees (wind-from convention)
+const DIR_DEG: Record<string, number> = {
+  N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5,
+  SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5,
+  W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
+  // Icelandic abbreviations sometimes appear
+  NA: 45, SUA: 135, SV: 225, NV: 315,
+};
+function dirToDeg(dir: string): number {
+  return DIR_DEG[dir.trim().toUpperCase()] ?? 0;
+}
+
+// vedur.is weather description text → WMO code
+function vedurDescToWmo(desc: string): number {
+  const d = desc.toLowerCase();
+  if (d.includes('thunder'))                       return 95;
+  if (d.includes('heavy snow') || d.includes('heavy sleet')) return 75;
+  if (d.includes('snow shower'))                   return 85;
+  if (d.includes('light snow') || d.includes('light sleet')) return 71;
+  if (d.includes('snow') || d.includes('sleet'))   return 73;
+  if (d.includes('heavy rain') || d.includes('heavy shower')) return 65;
+  if (d.includes('shower'))                        return 81;
+  if (d.includes('light rain') || d.includes('drizzle'))     return 61;
+  if (d.includes('rain'))                          return 63;
+  if (d.includes('fog') || d.includes('mist'))     return 45;
+  if (d.includes('overcast') || d.includes('cloudy')) return 3;
+  if (d.includes('partly cloudy') || d.includes('mostly cloudy')) return 2;
+  if (d.includes('mainly clear') || d.includes('mostly clear'))   return 1;
+  if (d.includes('clear') || d.includes('sunny') || d.includes('fair')) return 0;
+  return 3; // default to overcast if unknown
+}
+
+/** Extract all text content of a tag from an XML string (first match) */
+function xmlFirst(xml: string, tag: string): string {
+  const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+  return m ? m[1].trim() : '';
+}
+
+/** Extract all block contents of a tag from an XML string */
+function xmlAll(xml: string, tag: string): string[] {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'gi');
+  const out: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml)) !== null) out.push(m[1].trim());
+  return out;
+}
+
+/** Parse "YYYY-MM-DD HH:MM:SS" (Iceland = UTC+0) → ISO string */
+function ftimeToIso(ftime: string): string {
+  // e.g. "2025-04-21 14:00:00" → "2025-04-21T14:00:00Z"
+  return ftime.replace(' ', 'T') + (ftime.endsWith('Z') ? '' : 'Z');
+}
+
+async function fetchWeatherVedur(lat: number, lon: number): Promise<WeatherData> {
+  const station = nearestVedurStation(lat, lon);
+
+  const url =
+    `${VEDUR_BASE}?op_w=xml&type=forec&lang=en&view=xml` +
+    `&ids=${station.id}&time=1h&interval=1`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      signal: controller.signal,
+      next: { revalidate: 300 },
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!res.ok) throw new Error(`vedur.is error ${res.status} for station ${station.id}`);
+
+  const xml = await res.text();
+
+  // Parse all <forecast> blocks from the station
+  const blocks = xmlAll(xml, 'forecast');
+  if (blocks.length === 0) throw new Error(`vedur.is: no forecast blocks for station ${station.id}`);
+
+  interface VedurSlot {
+    time: string;     // ISO
+    tempC: number;
+    windMs: number;
+    windDeg: number;
+    wmoCode: number;
+  }
+
+  const nowMs = Date.now();
+
+  const slots: VedurSlot[] = blocks
+    .map((b) => {
+      const ftime = xmlFirst(b, 'ftime');
+      const T = parseFloat(xmlFirst(b, 'T'));
+      const F = parseFloat(xmlFirst(b, 'F'));
+      const D = xmlFirst(b, 'D');
+      const W = xmlFirst(b, 'W');
+      if (!ftime || isNaN(T) || isNaN(F)) return null;
+      return {
+        time:    ftimeToIso(ftime),
+        tempC:   Math.round(T),
+        windMs:  Math.round(beaufortToMs(F) * 10) / 10,
+        windDeg: dirToDeg(D),
+        wmoCode: vedurDescToWmo(W),
+      };
+    })
+    .filter((s): s is VedurSlot => s !== null);
+
+  if (slots.length === 0) throw new Error('vedur.is: could not parse any forecast slots');
+
+  // Current = closest slot to now
+  const current1 = slots.reduce((best, s) =>
+    Math.abs(new Date(s.time).getTime() - nowMs) <
+    Math.abs(new Date(best.time).getTime() - nowMs)
+      ? s : best
+  );
 
   const current: CurrentWeather = {
-    temperature:         Math.round(data.current.temperature_2m),
-    apparentTemperature: Math.round(data.current.apparent_temperature),
-    windSpeed:           Math.round(data.current.wind_speed_10m * 10) / 10,
-    windDirection:       data.current.wind_direction_10m,
-    precipitation:       data.current.precipitation,
-    weatherCode:         data.current.weather_code,
-    humidity:            data.current.relative_humidity_2m,
+    temperature:         current1.tempC,
+    apparentTemperature: apparentTemp(current1.tempC, current1.windMs),
+    windSpeed:           current1.windMs,
+    windDirection:       current1.windDeg,
+    precipitation:       0,   // vedur.is forecast doesn't include precip amount
+    weatherCode:         current1.wmoCode,
+    humidity:            0,   // not available from vedur.is forecast
   };
 
-  // Full 7-day hourly (Open-Meteo provides all of it in one response)
-  const hourly: HourlyForecast[] = hourlyTimes
-    .slice(startIdx)
-    .map((time: string, i: number) => ({
-      time,
-      temperature:              Math.round(data.hourly.temperature_2m[startIdx + i]),
-      precipitationProbability: data.hourly.precipitation_probability[startIdx + i] ?? 0,
-      windSpeed:                Math.round(data.hourly.wind_speed_10m[startIdx + i] * 10) / 10,
-      windDirection:            data.hourly.wind_direction_10m[startIdx + i],
-      weatherCode:              data.hourly.weather_code[startIdx + i],
+  // Hourly — all future slots
+  const hourly: HourlyForecast[] = slots
+    .filter((s) => new Date(s.time).getTime() >= nowMs)
+    .map((s) => ({
+      time:                     s.time,
+      temperature:              s.tempC,
+      precipitationProbability: 0,   // not in vedur.is forecast XML
+      windSpeed:                s.windMs,
+      windDirection:            s.windDeg,
+      weatherCode:              s.wmoCode,
     }));
 
-  const daily: DailyForecast[] = (data.daily.time as string[]).map((date: string, i: number) => ({
-    date,
-    weatherCode:              data.daily.weather_code[i],
-    maxTemp:                  Math.round(data.daily.temperature_2m_max[i]),
-    minTemp:                  Math.round(data.daily.temperature_2m_min[i]),
-    precipitationProbability: data.daily.precipitation_probability_max[i] ?? 0,
-    windSpeedMax:             Math.round(data.daily.wind_speed_10m_max[i] * 10) / 10,
-    sunrise:                  data.daily.sunrise[i],
-    sunset:                   data.daily.sunset[i],
-  }));
+  // Daily — group by date, derive min/max/dominant weather
+  const byDay = new Map<string, VedurSlot[]>();
+  for (const s of slots) {
+    const day = s.time.slice(0, 10);
+    const arr = byDay.get(day) ?? [];
+    arr.push(s);
+    byDay.set(day, arr);
+  }
+
+  const daily: DailyForecast[] = [...byDay.entries()].slice(0, 7).map(([dateStr, daySlots]) => {
+    const temps  = daySlots.map((s) => s.tempC);
+    const winds  = daySlots.map((s) => s.windMs);
+    // Pick representative weather from midday slot or middle of array
+    const midSlot = daySlots.find((s) => s.time.includes('T12:')) ?? daySlots[Math.floor(daySlots.length / 2)];
+    const { sunrise, sunset } = sunriseSunset(lat, lon, dateStr);
+    return {
+      date:                    dateStr,
+      weatherCode:             midSlot.wmoCode,
+      maxTemp:                 Math.round(Math.max(...temps)),
+      minTemp:                 Math.round(Math.min(...temps)),
+      precipitationProbability: 0,
+      windSpeedMax:            Math.round(Math.max(...winds) * 10) / 10,
+      sunrise,
+      sunset,
+    };
+  });
 
   return { current, hourly, daily };
 }
 
 // ---------------------------------------------------------------------------
-// Main entry point — met.no preferred, Open-Meteo as automatic fallback
+// Main entry point — met.no preferred (best accuracy), vedur.is as fallback
+// (met.no can be blocked from Vercel IPs; vedur.is is always reachable)
 // ---------------------------------------------------------------------------
 export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
   try {
     return await fetchWeatherMetNo(lat, lon);
   } catch (err) {
-    console.warn('met.no unavailable, falling back to Open-Meteo:', err);
-    return await fetchWeatherOpenMeteo(lat, lon);
+    console.warn('met.no unavailable, falling back to vedur.is:', err);
+    return await fetchWeatherVedur(lat, lon);
   }
 }

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWeather } from '@/lib/weather';
 
-export const runtime = 'edge';
+// Node.js runtime required — Edge Runtime silently drops next: { revalidate }
+// in fetch, which means every request hits met.no with no caching.
+export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

@@ -6,7 +6,7 @@ import { WeatherData, CurrentWeather, HourlyForecast, DailyForecast, Playability
 // Docs: https://api.met.no/weatherapi/locationforecast/2.0/documentation
 // ---------------------------------------------------------------------------
 const MET_NO_BASE = 'https://api.met.no/weatherapi/locationforecast/2.0/compact';
-const MET_NO_USER_AGENT = 'Golfvedur/1.0 (https://github.com/MrMagnusson/Golfvedur)';
+const MET_NO_USER_AGENT = 'Golfvedur/1.0 (kallimagg8@gmail.com)';
 
 // ---------------------------------------------------------------------------
 // Symbol code → app representation

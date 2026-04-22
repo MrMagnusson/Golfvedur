@@ -15,6 +15,7 @@ import {
   formatDay,
 } from '@/lib/weather';
 import { getCourseById, getCoursePhotoUrl } from '@/lib/courses';
+import { useWeatherSource } from '@/lib/weatherSource';
 
 function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -40,6 +41,7 @@ function useFavorites() {
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { source } = useWeatherSource();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
@@ -49,14 +51,16 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     if (!course) return;
-    fetch(`/api/weather?lat=${course.lat}&lon=${course.lon}`)
+    setLoading(true);
+    setWeather(null);
+    fetch(`/api/weather?lat=${course.lat}&lon=${course.lon}&source=${source}`)
       .then((r) => r.json())
       .then((data) => {
         setWeather(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [course]);
+  }, [course, source]);
 
   if (!course) {
     return (

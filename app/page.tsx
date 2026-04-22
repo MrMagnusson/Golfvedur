@@ -9,9 +9,10 @@ import { CourseCard } from '@/components/CourseCard';
 import { Course, CourseWithWeather } from '@/lib/types';
 import { getPlayabilityStatus, getWeatherInfo } from '@/lib/weather';
 import { getDistanceKm } from '@/lib/courses';
+import { useWeatherSource } from '@/lib/weatherSource';
 
-async function loadWeather(course: Course): Promise<CourseWithWeather> {
-  const res = await fetch(`/api/weather?lat=${course.lat}&lon=${course.lon}`);
+async function loadWeather(course: Course, source: string): Promise<CourseWithWeather> {
+  const res = await fetch(`/api/weather?lat=${course.lat}&lon=${course.lon}&source=${source}`);
   if (!res.ok) return course;
   const weather = await res.json();
   return { ...course, weather };
@@ -19,17 +20,20 @@ async function loadWeather(course: Course): Promise<CourseWithWeather> {
 
 export default function HomePage() {
   const router = useRouter();
+  const { source } = useWeatherSource();
   const [courses, setCourses] = useState<CourseWithWeather[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [showOptimalSheet, setShowOptimalSheet] = useState(false);
-  const loadedRef = useRef(false);
+  const loadedRef = useRef<string | null>(null);
 
-  // Load courses list
+  // Load courses list (re-runs when source changes)
   useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
+    if (loadedRef.current === source) return;
+    loadedRef.current = source;
+    setLoading(true);
+    setCourses([]);
 
     fetch('/api/courses')
       .then((r) => r.json())
@@ -39,7 +43,7 @@ export default function HomePage() {
 
         // Load weather for first 6 courses (visible above fold)
         list.slice(0, 6).forEach(async (course) => {
-          const withWeather = await loadWeather(course);
+          const withWeather = await loadWeather(course, source);
           setCourses((prev) =>
             prev.map((c) => (c.id === withWeather.id ? withWeather : c))
           );
@@ -47,7 +51,7 @@ export default function HomePage() {
 
         // Then load remaining
         list.slice(6).forEach(async (course) => {
-          const withWeather = await loadWeather(course);
+          const withWeather = await loadWeather(course, source);
           setCourses((prev) =>
             prev.map((c) => (c.id === withWeather.id ? withWeather : c))
           );
@@ -64,7 +68,7 @@ export default function HomePage() {
         () => {} // Silently ignore location errors
       );
     }
-  }, []);
+  }, [source]);
 
   // Sort by distance when location is available
   const sortedCourses = userLocation

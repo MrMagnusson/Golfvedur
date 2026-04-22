@@ -188,7 +188,7 @@ export function getDaylightDuration(sunrise: string, sunset: string): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Timeslot = Record<string, any>;
 
-async function fetchWeatherMetNo(lat: number, lon: number): Promise<WeatherData> {
+export async function fetchWeatherMetNo(lat: number, lon: number): Promise<WeatherData> {
   const url = `${MET_NO_BASE}?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}`;
 
   const controller = new AbortController();
@@ -407,7 +407,7 @@ function ftimeToIso(ftime: string): string {
   return ftime.replace(' ', 'T') + (ftime.endsWith('Z') ? '' : 'Z');
 }
 
-async function fetchWeatherVedur(lat: number, lon: number): Promise<WeatherData> {
+export async function fetchWeatherVedur(lat: number, lon: number): Promise<WeatherData> {
   const station = nearestVedurStation(lat, lon);
 
   const url =

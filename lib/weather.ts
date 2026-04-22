@@ -386,15 +386,18 @@ function vedurDescToWmo(desc: string): number {
   return 3; // default to overcast if unknown
 }
 
-/** Extract all text content of a tag from an XML string (first match) */
+/** Extract first text content of an exact tag (no prefix-match false positives).
+ *  <F> will NOT match <ftime> because after 'F' the pattern requires '>' or whitespace. */
 function xmlFirst(xml: string, tag: string): string {
-  const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+  const esc = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const m = xml.match(new RegExp(`<${esc}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${esc}>`, 'i'));
   return m ? m[1].trim() : '';
 }
 
-/** Extract all block contents of a tag from an XML string */
+/** Extract all block contents of an exact tag from an XML string */
 function xmlAll(xml: string, tag: string): string[] {
-  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'gi');
+  const esc = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`<${esc}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${esc}>`, 'gi');
   const out: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(xml)) !== null) out.push(m[1].trim());
